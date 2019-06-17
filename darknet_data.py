@@ -22,12 +22,18 @@ def convert(size, box):
     return (x,y,w,h)
 
 def main():
-    image_path = '/media/zsj/256ssd/dataset/jpg2'
+    image_path = '/media/zsj/256ssd/dataset/head_shoulder_darknet/images'
     image_names,_,_ = mytool.type_file_name(image_path,'.jpg')
+    train_txt = open('train.txt','w')
+
     for image_name in image_names:
+        train_txt.write(image_name)
+        train_txt.write('\n')
         xml_name = image_name.replace('.jpg','.xml')
+        image_txt = open(DARKNET_DATA_PATH + '/labels/' + image_name.split('/')[-1].replace('.jpg', '.txt'), 'w')
         if not os.path.exists(xml_name):
             print("not exists",xml_name)
+            image_txt.close()
             continue
         xml_tree = ET.parse(xml_name)
         xml_root = xml_tree.getroot()
@@ -44,11 +50,13 @@ def main():
             b = (float(xmlbox.find('xmin').text), float(xmlbox.find('xmax').text), float(xmlbox.find('ymin').text),
                  float(xmlbox.find('ymax').text))
             bb = convert((w, h), b)
-            print(bb)
-
+            image_txt.write(str(cls_id) + " " + " ".join([str(a) for a in bb]) + '\n')
+            # print(bb)
+        image_txt.close()
+    train_txt.close()
 #flip image and create new xml
 def image_to_flip():
-    image_path = image_path = '/media/zsj/256ssd/dataset/jpg2'
+    image_path = '/media/zsj/256ssd/dataset/head_shoulder_darknet/images'
     image_names,_,_ = mytool.type_file_name(image_path,'.jpg')
     for image_name in image_names:
         image = cv2.imread(image_name)
@@ -73,14 +81,15 @@ def image_to_flip():
             ymin = xmlbox.find('ymin')
             #xmax = xmlbox.find('xmax')
             ymax = xmlbox.find('ymax')
-
-            ymin.text = str(h - int(ymin.text))
-            ymax.text = str(h - int(ymax.text))
+            tmp_ymin = int(ymin.text)
+            tmp_ymax = int(ymax.text)
+            ymin.text = str(h - tmp_ymax)
+            ymax.text = str(h - tmp_ymin)
         xml_tree.write(xml_name.replace('.','_flip.'))
 
 #resize image and create new xml
 def image_resize():
-    image_path = image_path = '/media/zsj/256ssd/dataset/jpg2'
+    image_path = '/media/zsj/256ssd/dataset/head_shoulder_darknet/images'
     image_names, _, _ = mytool.type_file_name(image_path, '.jpg')
     for image_name in image_names:
         image = cv2.imread(image_name)
@@ -127,4 +136,4 @@ def image_resize():
         # cv2.waitKey()
         xml_tree.write(xml_name.replace('.', '_resize.'))
 if __name__ == '__main__':
-    image_resize()
+    main()
